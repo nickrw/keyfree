@@ -11,6 +11,10 @@ session = boto3.session.Session()
 creds = session.get_credentials()
 
 
+class CredentialError(Exception):
+    pass
+
+
 def auth_handler():
     frozen = creds.get_frozen_credentials()
     return AWS4Auth(
@@ -70,6 +74,15 @@ def proxy(path):
         headers=response_headers,
     )
     return proxy_response
+
+
+@app.before_first_request
+def check_credentials(*args, **kwargs):
+    if creds is None:
+        raise CredentialError("boto failed to find access keys")
+    if session.region_name is None:
+        # TODO - we could discover this from the endpoint url if boto doesn't
+        raise CredentialError("boto did not discover a region automatically")
 
 
 def setup(**kwargs):

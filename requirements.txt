@@ -1,0 +1,4 @@
+flask==0.11.1
+requests==2.11.1
+requests-aws4auth==0.9
+boto3==1.4.1

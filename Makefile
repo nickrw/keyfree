@@ -23,6 +23,9 @@ clean:
 clean-all: clean
 	rm -rf venv-python2 venv-python3
 
+pypi: venv-python3
+	venv-python3/bin/python setup.py bdist_wheel --universal sdist upload
+
 tag: venv-python3
 	git tag $(shell venv-python3/bin/python setup.py --version)
 

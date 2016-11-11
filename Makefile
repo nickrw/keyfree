@@ -7,7 +7,7 @@ dist: venv-python3
 
 venv-%:
 	virtualenv -p $* $@
-	$@/bin/pip install -r <(cat requirements.txt requirements-dev.txt)
+	$@/bin/pip install -r <(cat requirements.txt requirements-dev.txt requirements-setup.txt)
 
 lint-%: venv-%
 	venv-$*/bin/flake8 keyfree

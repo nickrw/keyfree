@@ -7,7 +7,7 @@ dist: venv-python3
 
 venv-%:
 	virtualenv -p $* $@
-	$@/bin/pip install -r <(cat requirements.txt requirements-dev.txt requirements-setup.txt)
+	$@/bin/pip install -r <(cat requirements.txt requirements-dev.txt)
 
 lint-%: venv-%
 	venv-$*/bin/flake8 keyfree
@@ -22,6 +22,9 @@ clean:
 
 clean-all: clean
 	rm -rf venv-python2 venv-python3
+
+doc:
+	pandoc --from=markdown --to=rst --output=README.rst README.md
 
 pypi: venv-python3
 	venv-python3/bin/python setup.py bdist_wheel --universal sdist upload

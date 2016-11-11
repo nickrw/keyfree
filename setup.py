@@ -31,6 +31,7 @@ setup(
     entry_points={
         'console_scripts': ['keyfree-proxy-test=keyfree.proxy:main'],
     },
+    license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',

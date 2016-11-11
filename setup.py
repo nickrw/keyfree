@@ -31,4 +31,16 @@ setup(
     entry_points={
         'console_scripts': ['keyfree-proxy-test=keyfree.proxy:main'],
     },
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: MIT License',
+        'Intended Audience :: System Administrators',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+        'Environment :: No Input/Output (Daemon)',
+        'Topic :: Internet :: Proxy Servers',
+        'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
+    ],
 )

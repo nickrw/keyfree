@@ -1,29 +1,14 @@
 import argparse
 import os
+import logging
 
-import boto3
 from flask import Flask, Response, request
 import requests
-from requests_aws4auth import AWS4Auth
 from werkzeug.routing import Rule
 
-session = boto3.session.Session()
-creds = session.get_credentials()
+from .auth import AutoAWS4Auth
 
-
-class CredentialError(Exception):
-    pass
-
-
-def auth_handler():
-    frozen = creds.get_frozen_credentials()
-    return AWS4Auth(
-        frozen.access_key,
-        frozen.secret_key,
-        session.region_name,
-        'es',
-        session_token=frozen.token,
-    )
+logger = logging.getLogger(__name__)
 
 blacklist_response_headers = (
     "connection",
@@ -51,14 +36,16 @@ def proxy(path):
         path=path,
         qs=request.query_string.decode('utf-8'),
     )
+    logger.debug('Request URL {}'.format(url))
     request_headers = {}
     for header_name, header_value in request.headers.items():
         if header_name.lower() in whitelist_request_headers:
             request_headers[header_name] = header_value
+    logger.debug('Request headers {}'.format(request_headers))
     upstream_response = requests.request(
         request.method,
         url,
-        auth=auth_handler(),
+        auth=AutoAWS4Auth('es'),
         headers=request_headers,
         data=request.data,
         stream=True,
@@ -67,29 +54,40 @@ def proxy(path):
     for header_name, header_value in upstream_response.headers.items():
         if header_name.lower() not in blacklist_response_headers:
             response_headers[header_name] = header_value
+    logger.debug('Response Status {}'.format(upstream_response.status_code))
+    logger.debug('Response Headers {}'.format(response_headers))
 
+    response_generator = (
+        upstream_response.iter_content(chunk_size=config['chunk_size'])
+    )
     proxy_response = Response(
-        response=upstream_response.iter_content(chunk_size=None),
+        response=response_generator,
         status=upstream_response.status_code,
         headers=response_headers,
+        direct_passthrough=True,
     )
     return proxy_response
 
 
 @app.before_first_request
 def check_credentials(*args, **kwargs):
-    if creds is None:
-        raise CredentialError("boto failed to find access keys")
-    if session.region_name is None:
-        # TODO - we could discover this from the endpoint url if boto doesn't
-        raise CredentialError("boto did not discover a region automatically")
+    AutoAWS4Auth('es')
 
 
 def setup(**kwargs):
+    def_chunk_size = 1024 * 1024
+    try:
+        env_chunk_size = os.getenv('CHUNK_SIZE', def_chunk_size)
+        def_chunk_size = int(env_chunk_size)
+    except (TypeError, ValueError):
+        pass
     defaults = {
         'endpoint': os.getenv('ENDPOINT', ''),
+        'chunk_size': def_chunk_size,
     }
     defaults.update(kwargs)
+    if defaults['chunk_size'] == 0:
+        defaults['chunk_size'] = None
     config.update(defaults)
 
 setup()
@@ -100,6 +98,7 @@ def main():
     parser.add_argument('--bind-host', default='127.0.0.1')
     parser.add_argument('--bind-port', type=int, default=9200)
     parser.add_argument('--endpoint', required=True)
+    parser.add_argument('--chunk-size', type=int, default=1024*1024)
     args = parser.parse_args()
     setup(**vars(args))
     app.run(host=args.bind_host, port=args.bind_port, debug=True)

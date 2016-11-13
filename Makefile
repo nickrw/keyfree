@@ -5,7 +5,7 @@ default: test dist
 dist: venv-python3
 	venv-python3/bin/python setup.py bdist_wheel --universal
 
-venv-%:
+venv-%: requirements.txt requirements-dev.txt
 	virtualenv -p $* $@
 	$@/bin/pip install -r <(cat requirements.txt requirements-dev.txt)
 

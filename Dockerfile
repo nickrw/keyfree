@@ -8,7 +8,7 @@ RUN pip install --use-wheel --upgrade pip wheel setuptools gunicorn
 COPY requirements.txt /usr/local/src/requirements.txt
 RUN pip install --use-wheel -r /usr/local/src/requirements.txt
 
-COPY MANIFEST.in requirements* setup.py /usr/local/src/keyfree/
+COPY MANIFEST.in README* requirements* setup.py /usr/local/src/keyfree/
 COPY keyfree/ /usr/local/src/keyfree/keyfree/
 RUN cd /usr/local/src/keyfree; python setup.py bdist_wheel
 RUN pip install /usr/local/src/keyfree/dist/*.whl
